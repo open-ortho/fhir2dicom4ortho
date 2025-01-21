@@ -8,7 +8,8 @@ import logging
 import os
 import importlib.resources
 import fhir2dicom4ortho.__main__
-class Test(unittest.TestCase):
+
+class TestCli(unittest.TestCase):
 
     def setUp(self):
         logging.basicConfig(format='%(asctime)s - %(levelname)s - %(funcName)s: %(message)s',

@@ -23,6 +23,8 @@ classifiers = [
     "Programming Language :: Python :: 3"
 ]
 dependencies = [
+    "requests",
+    "sqlalchemy",
     "apscheduler",
     "pydantic",
     "fhir.resources",
@@ -46,3 +48,7 @@ fhir2dicom4ortho = "fhir2dicom4ortho.entry_points:fhir_api"
 
 [tool.setuptools.packages.find]
 include = ["fhir2dicom4ortho*"]
+
+[tool.poetry.dev-dependencies]
+toml = "^0.10.2"
+invoke = "^1.5.0"
