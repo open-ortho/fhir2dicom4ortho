@@ -21,3 +21,11 @@ services:
     container_name: fhir2dicom4ortho
     hostname: fhir2dicom4ortho
     ports: ["8203:8000"]
+    environment:
+      F2D4O_VERBOSITY: 2
+      F2D4O_FHIR_LISTEN: ""
+      F2D4O_FHIR_PORT: ""
+      F2D4O_PACS_SEND_METHOD: "dimse"
+      F2D4O_PACS_DIMSE_AET: "ORTHANC-MOCK"
+      F2D4O_PACS_DIMSE_IP: "127.0.0.1"
+ 

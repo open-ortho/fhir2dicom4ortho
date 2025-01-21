@@ -39,6 +39,7 @@
 - [Known Issues](#known-issues)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
+  - [Development](#development)
 - [License](#license)
 - [Contact](#contact)
 - [Acknowledgements](#acknowledgements)
@@ -56,19 +57,26 @@ TODO
 
 ## Building
 
-  invoke build
+    poetry install
 
 ## Getting Started
 
-TODO
-
 ### Prerequisites
 
-TODO
+    Poetry
 
 ### Installation
 
-TODO
+    # Install Poetry
+    curl -sSL https://install.python-poetry.org | python3 -
+
+    # or install with pipx
+
+    # Install dependencies
+    poetry install
+
+    # Activate the virtual environment
+    poetry shell
 
 <!-- USAGE EXAMPLES -->
 ## Usage
@@ -95,6 +103,13 @@ Contributions are what make the open source community such an amazing place to b
 3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a [Pull Request](https://docs.github.com/en/github/collaborating-with-issues-and-pull-requests/creating-a-pull-request)
+
+### Development
+
+Before development, 
+1. `poetry update` to update all dependencies;
+2. Run all tests and fix issues caused by update dependecies;
+3. Continue development;
 
 <!-- LICENSE -->
 ## License

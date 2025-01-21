@@ -1,3 +1,7 @@
+""" Invoke tasks for building and pushing the Docker image to the private registry. 
+
+This is the equivalent of a Makefile. It is used to automate the process of building and pushing the Docker image to the private registry.
+"""
 import toml
 from invoke import task
 
@@ -12,6 +16,11 @@ registry = "cr.medoco.health"
 docker_image_name = f"{registry}/{organization}/{project_name}"
 
 @task
+def export_requirements(c):
+    """Export dependencies to requirements.txt."""
+    c.run("poetry export -f requirements.txt --output requirements.txt --without-hashes")
+
+@task(pre=[export_requirements])
 def build(c):
     """Build the Docker image."""
     c.run(f"docker build -t {docker_image_name}:latest -t {docker_image_name}:{version} .")

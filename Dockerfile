@@ -9,8 +9,9 @@ COPY pyproject.toml README.md /app/
 
 # Copy the rest of the application code to the container
 COPY fhir2dicom4ortho /app/fhir2dicom4ortho
-COPY pyproject.toml /app/
+COPY pyproject.toml requirements.txt /app/
 
+RUN pip install -r /app/requirements.txt
 RUN pip install /app
 
 # Expose the port the app runs on

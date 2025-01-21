@@ -10,3 +10,4 @@ docs/.buildinfo
 .test*
 *.sqlite
 Pipfile*
+requirements.txt
