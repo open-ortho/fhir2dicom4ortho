@@ -7,19 +7,14 @@ WORKDIR /app
 # Copy the pyproject.toml and other necessary files to the container
 COPY pyproject.toml README.md /app/
 
-# Install poetry to manage dependencies
-RUN pip install poetry
-
-# Install the dependencies
-RUN poetry install --no-dev
-
 # Copy the rest of the application code to the container
 COPY fhir2dicom4ortho /app/fhir2dicom4ortho
+COPY pyproject.toml /app/
 
-RUN cd /app/fhir2dicom4ortho && poetry run pip install -e ./
+RUN pip install /app
 
 # Expose the port the app runs on
 EXPOSE 8000
 
 # Command to run the application
-CMD ["poetry", "run", "fhir2dicom4ortho"]
+CMD ["fhir2dicom4ortho"]
