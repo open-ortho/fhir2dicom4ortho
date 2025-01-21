@@ -56,7 +56,13 @@ class TestFHIRAPI(unittest.TestCase):
         self.assertIsNotNone(task)
         self.assertIn(task.status, [TASK_COMPLETED])
 
-
+    def test_list_all_tasks(self):
+        response = self.client.get("/fhir/Task")
+        self.assertEqual(response.status_code, 200)
+        response_data = response.json()
+        bundle = Bundle.model_validate(response_data)
+        self.assertGreater(len(bundle.entry), 0, "The bundle should contain at least one entry")
+        self.assertGreater(bundle.total,0)
 
 
 if __name__ == '__main__':

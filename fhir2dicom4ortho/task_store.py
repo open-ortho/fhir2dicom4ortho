@@ -87,6 +87,14 @@ class TaskStore:
         session.close()
         return fhir_task if task else None
 
+    def get_all_tasks(self):
+        """ Retrieve all tasks from the database """
+        session = self.Session()
+        tasks = session.query(Task).all()
+        session.close()
+        fhir_tasks = [FHIRTask.model_validate_json(task.fhir_task) for task in tasks]
+        return fhir_tasks
+
     # def modify_task(self, task_id, updated_fhir_task: FHIRTask) -> FHIRTask:
     #     session = self.Session()
     #     task = session.query(Task).filter_by(id=task_id).first()

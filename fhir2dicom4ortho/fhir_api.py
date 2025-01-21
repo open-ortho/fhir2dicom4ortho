@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request
-from fhir.resources.bundle import Bundle
+from fhir.resources.bundle import Bundle, BundleEntry
 from fhir.resources.task import Task
 from fhir.resources.operationoutcome import OperationOutcome
 
@@ -54,9 +54,21 @@ async def get_task_status(task_id: str):
                 }]
             )
             return operation_outcome.model_dump(), 404
-
         return task.model_dump()
+    except Exception as e:
+        logger.exception(e)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
+@fhir_api_app.get("/fhir/Task")
+async def list_all_tasks():
+    try:
+        tasks = task_store.get_all_tasks()
+        bundle = Bundle(
+            type="searchset",
+            total=len(tasks),
+            entry=[BundleEntry(resource=task) for task in tasks]
+        )
+        return bundle.model_dump()
 
     except Exception as e:
         logger.exception(e)
