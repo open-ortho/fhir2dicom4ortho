@@ -6,7 +6,7 @@ services:
     hostname: orthanc
     ports: ["127.0.0.1:8202:8042", "127.0.0.1:4242:4242"]
     volumes:
-      - ./orthanc.json:/etc/orthanc/orthanc.json
+      - ./test/orthanc.json:/etc/orthanc/orthanc.json
     environment:
       VERBOSE_STARTUP: "true"
       VERBOSE_ENABLED: "true"
@@ -23,8 +23,8 @@ services:
     ports: ["8203:8000"]
     environment:
       F2D4O_VERBOSITY: 2
-      F2D4O_FHIR_LISTEN: ""
-      F2D4O_FHIR_PORT: ""
+      F2D4O_FHIR_LISTEN: "127.0.0.1"
+      F2D4O_FHIR_PORT: "8000"
       F2D4O_PACS_SEND_METHOD: "dimse"
       F2D4O_PACS_DIMSE_AET: "ORTHANC-MOCK"
       F2D4O_PACS_DIMSE_IP: "127.0.0.1"

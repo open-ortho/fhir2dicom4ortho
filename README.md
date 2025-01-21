@@ -40,6 +40,7 @@
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
   - [Development](#development)
+  - [requirement.txt](#requirementtxt)
 - [License](#license)
 - [Contact](#contact)
 - [Acknowledgements](#acknowledgements)
@@ -110,6 +111,12 @@ Before development,
 1. `poetry update` to update all dependencies;
 2. Run all tests and fix issues caused by update dependecies;
 3. Continue development;
+
+### requirement.txt
+
+The `requirements.txt` file is only used for Dependabot, which i think works off of that and not `poetry.lock`. However, the project's dependencies are managed by poetry.
+
+Building a new docker image should trigger the generation of a new `requirements.txt`, which you should then safely commit.
 
 <!-- LICENSE -->
 ## License
