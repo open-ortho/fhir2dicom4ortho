@@ -36,6 +36,10 @@
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
 - [Usage](#usage)
+- [API Endpoints](#api-endpoints)
+  - [`POST /fhir/Bundle`](#post-fhirbundle)
+  - [`GET /fhir/Task/{task_id}`](#get-fhirtasktask_id)
+  - [`GET /fhir/Task`](#get-fhirtask)
 - [Known Issues](#known-issues)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
@@ -90,6 +94,57 @@ TODO
 ## Usage
 
 TODO
+
+## API Endpoints
+
+The `fhir2dicom4ortho` project implements a partial set of FHIR API endpoints to interact with DICOM Orthodontic imaging studies. Below are the currently implemented endpoints along with their functionalities and references to the official FHIR documentation.
+
+### `POST /fhir/Bundle`
+
+**Description:**  
+Accepts a FHIR `Bundle` containing `Task`, `ImagingStudy`, and `Binary` resources. Processes the bundle by scheduling the creation and sending of a DICOM image to the PACS server.
+
+**Functionality:**
+- Validates the incoming Bundle for required resources.
+- Updates the `Task` status to "received".
+- Schedules the job using APScheduler.
+- Returns the updated `Task` resource.
+
+**FHIR Documentation:**  
+[Task Resource](https://www.hl7.org/fhir/task.html)
+[ImagingStudy Resource](https://www.hl7.org/fhir/imagingstudy.html)
+[Binary Resource](https://www.hl7.org/fhir/binary.html)
+[Bundle Resource](https://www.hl7.org/fhir/bundle.html)
+
+### `GET /fhir/Task/{task_id}`
+
+**Description:**  
+Retrieves the status of a specific Task by its `task_id`.
+
+**Functionality:**
+- Fetches the `Task` resource corresponding to the provided `task_id`.
+- Returns the `Task` resource if found.
+- Returns an `OperationOutcome` if the `Task` is not found.
+
+**FHIR Documentation:**  
+[Task Resource](https://www.hl7.org/fhir/task.html)
+[OperationOutcome Resource](https://www.hl7.org/fhir/operationoutcome.html)
+
+### `GET /fhir/Task`
+
+**Description:**  
+Retrieves all existing Tasks.
+
+**Functionality:**
+- Fetches all `Task` resources.
+- Returns a FHIR `Bundle` containing the list of Tasks.
+
+**FHIR Documentation:**  
+[Task Resource](https://www.hl7.org/fhir/task.html)
+[Bundle Resource](https://www.hl7.org/fhir/bundle.html)
+
+**Note:**  
+The current implementation includes only the above endpoints. Additional endpoints and functionalities could be  planned for future releases to provide better support for FHIR operations.
 
 ## Known Issues
 
