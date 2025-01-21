@@ -1,0 +1,44 @@
+{
+    "Name": "orthanc-mock",
+    "DicomAet": "ORTHANC-MOCK",
+    "HttpsVerifyPeers": false,
+    "StorageCompression": false,
+    "LimitFindResults": 100,
+    "LimitFindInstances": 1000,
+    "KeepAlive": true,
+    "TcpNoDelay": true,
+    "StorageAccessOnFind": "Never",
+    "TranscodeDicomProtocol": true,
+    "DicomAlwaysAllowEcho": true,
+    "DicomAlwaysAllowStore": true,
+    "DicomAlwaysAllowFind": true,
+    "DicomAlwaysAllowFindWorklist": true,
+    "DicomAlwaysAllowGet": true,
+    "DicomAlwaysAllowMove": true,
+    "RemoteAccessAllowed": true,
+    "AuthenticationEnabled": true,
+    "StoreMD5ForAttachments": true,
+    "RegisteredUsers": {
+        "orthanc": "mock"
+    },
+    "Plugins" : [ 
+        "/usr/share/orthanc/plugins", "/usr/local/share/orthanc/plugins"
+      ],
+    "DicomWeb": {
+        "Enable": true,
+        "Root": "/dicom-web/",
+        "EnableWado": true,
+        "WadoRoot": "/wado",
+        "Ssl": false,
+        "QidoCaseSensitive": true,
+        "Host": "",
+        "StudiesMetadata": "Full",
+        "SeriesMetadata": "Full",
+        "EnableMetadataCache": true,
+        "MetadataWorkerThreadsCount": 4,
+        "PublicRoot": "/dicom-web/",
+        "Servers" : {
+            "localhost" : [ "http://127.0.0.1:4242/dicom-web/"]
+        }
+    }
+}

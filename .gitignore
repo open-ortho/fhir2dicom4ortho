@@ -1,0 +1,12 @@
+.vscode/*
+resources/dicom3tools_*
+dist/*
+build
+*.pyc
+*.egg-info
+*.dcm
+modules/dicom3tools
+docs/.buildinfo
+.test*
+*.sqlite
+Pipfile*
