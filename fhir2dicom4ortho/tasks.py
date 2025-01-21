@@ -6,7 +6,7 @@ from fhir2dicom4ortho import logger, args_cache
 from dicom4ortho.controller import OrthodonticController
 from dicom4ortho.m_orthodontic_photograph import OrthodonticPhotograph
 # from fhir2dicom4ortho.task_store import TaskStore # Cannot import TaskStore for circular import
-from fhir2dicom4ortho.utils import get_scheduled_protocol_from_basic, convert_binary_to_dataset, get_opor_code_value_from_code
+from fhir2dicom4ortho.utils import convert_binary_to_dataset, translate_all_scheduled_protocol_codes_to_opor
 
 TASK_DRAFT = "draft"
 TASK_RECEIVED = "received"
@@ -41,9 +41,8 @@ def _build_dicom_image(bundle:Bundle, task_id, task_store)-> OrthodonticPhotogra
     # image = convert_binary_to_image(image_binary)
     mwl_dataset = convert_binary_to_dataset(dicom_binary)
         
-    logger.debug("Getting proper 99OPOR image type code from MWL")
-    scheduled_protocol_code = get_scheduled_protocol_from_basic(mwl_dataset)
-    scheduled_protocol_code_value = get_opor_code_value_from_code(scheduled_protocol_code)
+    # logger.debug("Getting proper 99OPOR image type code from MWL")
+    mwl_dataset = translate_all_scheduled_protocol_codes_to_opor(mwl_dataset)
 
     logger.debug("Building OrthodonticPhotograph")
     try:
