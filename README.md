@@ -93,7 +93,16 @@ TODO
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-TODO
+```bash
+docker run -d \
+  --env-file ./test/env-dev \
+  -p 127.0.0.1:8203:8000 \
+  -v ./tasks.sqlite:/app/tasks.sqlite \
+  --name fhir2dicom4ortho \
+  cr.medoco.health/open-ortho/fhir2dicom4ortho:latest
+```
+
+There is the `docker-compose.yml` you can use as example.
 
 ## API Endpoints
 
@@ -111,10 +120,10 @@ Accepts a FHIR `Bundle` containing `Task`, `ImagingStudy`, and `Binary` resource
 - Returns the updated `Task` resource.
 
 **FHIR Documentation:**  
-[Task Resource](https://www.hl7.org/fhir/task.html)
-[ImagingStudy Resource](https://www.hl7.org/fhir/imagingstudy.html)
-[Binary Resource](https://www.hl7.org/fhir/binary.html)
-[Bundle Resource](https://www.hl7.org/fhir/bundle.html)
+- [Task Resource](https://www.hl7.org/fhir/task.html)
+- [ImagingStudy Resource](https://www.hl7.org/fhir/imagingstudy.html)
+- [Binary Resource](https://www.hl7.org/fhir/binary.html)
+- [Bundle Resource](https://www.hl7.org/fhir/bundle.html)
 
 ### `GET /fhir/Task/{task_id}`
 
@@ -127,8 +136,8 @@ Retrieves the status of a specific Task by its `task_id`.
 - Returns an `OperationOutcome` if the `Task` is not found.
 
 **FHIR Documentation:**  
-[Task Resource](https://www.hl7.org/fhir/task.html)
-[OperationOutcome Resource](https://www.hl7.org/fhir/operationoutcome.html)
+- [Task Resource](https://www.hl7.org/fhir/task.html)
+- [OperationOutcome Resource](https://www.hl7.org/fhir/operationoutcome.html)
 
 ### `GET /fhir/Task`
 
@@ -140,8 +149,8 @@ Retrieves all existing Tasks.
 - Returns a FHIR `Bundle` containing the list of Tasks.
 
 **FHIR Documentation:**  
-[Task Resource](https://www.hl7.org/fhir/task.html)
-[Bundle Resource](https://www.hl7.org/fhir/bundle.html)
+- [Task Resource](https://www.hl7.org/fhir/task.html)
+- [Bundle Resource](https://www.hl7.org/fhir/bundle.html)
 
 **Note:**  
 The current implementation includes only the above endpoints. Additional endpoints and functionalities could be  planned for future releases to provide better support for FHIR operations.
@@ -185,6 +194,8 @@ Building a new docker image should trigger the generation of a new `requirements
 To operate this API, you need to construct a FHIR Bundle containing specific resources. Below is an example of how to build the required FHIR Bundle, using `fhir2dicom4ortho.Bundle.json` as a reference.
 
 ### Example FHIR Bundle
+
+See `test/fhir2dicom4ortho.Bundle.json` for a full example implementation.
 
 The FHIR Bundle should contain the following resources:
 
