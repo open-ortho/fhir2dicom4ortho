@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Response
 from fhir.resources.bundle import Bundle, BundleEntry
 from fhir.resources.task import Task
 from fhir.resources.operationoutcome import OperationOutcome
@@ -13,6 +13,15 @@ fhir_api_app = FastAPI()
 # In-memory task store
 task_store = TaskStore()
 
+def create_operation_outcome(severity: str, code: str, diagnostics: str) -> OperationOutcome:
+    return OperationOutcome(
+        issue=[{
+            "severity": severity,
+            "code": code,
+            "diagnostics": diagnostics
+        }]
+    )
+
 @fhir_api_app.post("/fhir/Bundle")
 async def handle_bundle(request: Request):
     try:
@@ -20,10 +29,10 @@ async def handle_bundle(request: Request):
         bundle = Bundle(**bundle_data)
         for entry in bundle.entry:
             if not entry.resource:
-                raise HTTPException(status_code=400, detail="Invalid Bundle: Entry must contain a resource")
+                return Response(content=create_operation_outcome("error", "invalid", "Entry must contain a resource").model_dump_json(), media_type="application/json", status_code=400)
             resource = entry.resource
             if isinstance(resource, Task):
-                task:Task = resource
+                task: Task = resource
                 break
 
         # Update Task status resource to represent the job
@@ -35,29 +44,29 @@ async def handle_bundle(request: Request):
         logger.info(f"Job scheduled: {job.id}")
 
         task_store.modify_task_status(task.id, TASK_RECEIVED)
-        return task.model_dump()
+        return Response(content=task.model_dump_json(), media_type="application/json", status_code=200)
 
     except Exception as e:
         logger.exception(e)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        operation_outcome = create_operation_outcome("error", "exception", str(e))
+        return Response(content=operation_outcome.model_dump_json(), media_type="application/json", status_code=500)
 
 @fhir_api_app.get("/fhir/Task/{task_id}")
 async def get_task_status(task_id: str):
     try:
         task = task_store.get_fhir_task_by_id(task_id)
         if not task:
-            operation_outcome = OperationOutcome(
-                issue=[{
-                    "severity": "error",
-                    "code": "not-found",
-                    "diagnostics": f"Task with ID {task_id} not found"
-                }]
+            operation_outcome = create_operation_outcome(
+                severity="error",
+                code="not-found",
+                diagnostics=f"Task with ID {task_id} not found"
             )
-            return operation_outcome.model_dump(), 404
-        return task.model_dump()
+            return Response(content=operation_outcome.model_dump_json(), media_type="application/json", status_code=404)
+        return Response(content=task.model_dump_json(), media_type="application/json", status_code=200)
     except Exception as e:
         logger.exception(e)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        operation_outcome = create_operation_outcome("error", "exception", str(e))
+        return Response(content=operation_outcome.model_dump_json(), media_type="application/json", status_code=500)
 
 @fhir_api_app.get("/fhir/Task")
 async def list_all_tasks():
@@ -68,8 +77,8 @@ async def list_all_tasks():
             total=len(tasks),
             entry=[BundleEntry(resource=task) for task in tasks]
         )
-        return bundle.model_dump()
-
+        return Response(content=bundle.model_dump_json(), media_type="application/json", status_code=200)
     except Exception as e:
         logger.exception(e)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        operation_outcome = create_operation_outcome("error", "exception", str(e))
+        return Response(content=operation_outcome.model_dump_json(), media_type="application/json", status_code=500)
