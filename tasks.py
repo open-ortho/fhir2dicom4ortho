@@ -4,6 +4,7 @@ This is the equivalent of a Makefile. It is used to automate the process of buil
 """
 import toml
 from invoke import task
+import time
 
 # Load the version from pyproject.toml
 with open("pyproject.toml", "r") as f:
@@ -31,7 +32,18 @@ def push(c):
     c.run(f"docker push {docker_image_name}:latest")
     c.run(f"docker push {docker_image_name}:{version}")
 
-@task(pre=[build, push])
+@task
+def ensure_orthanc_running(c):
+    """Ensure the Orthanc service is running."""
+    c.run("docker compose up -d orthanc")
+    time.sleep(2)  # Wait for Orthanc to start
+
+@task(pre=[export_requirements, ensure_orthanc_running])
+def test(c):
+    """Run all unit tests."""
+    c.run("python -m unittest")
+
+@task(pre=[test, build, push])
 def deploy(c):
     """Build and push the Docker image."""
     print(f"Docker image built and pushed to the private registry with tags 'latest' and '{version}'.")
