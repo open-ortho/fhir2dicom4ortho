@@ -13,14 +13,15 @@ fhir_api_app = FastAPI()
 # In-memory task store
 task_store = TaskStore()
 
-def create_operation_outcome(severity: str, code: str, diagnostics: str) -> OperationOutcome:
-    return OperationOutcome(
+def create_operation_outcome(severity: str, code: str, diagnostics: str) -> str:
+    outcome = OperationOutcome(
         issue=[{
             "severity": severity,
             "code": code,
             "diagnostics": diagnostics
         }]
     )
+    return outcome.model_dump_json()
 
 @fhir_api_app.post("/fhir/Bundle")
 async def handle_bundle(request: Request):
@@ -29,7 +30,7 @@ async def handle_bundle(request: Request):
         bundle = Bundle(**bundle_data)
         for entry in bundle.entry:
             if not entry.resource:
-                return Response(content=create_operation_outcome("error", "invalid", "Entry must contain a resource").model_dump_json(), media_type="application/json", status_code=400)
+                return Response(content=create_operation_outcome("error", "invalid", "Entry must contain a resource"), media_type="application/json", status_code=400)
             resource = entry.resource
             if isinstance(resource, Task):
                 task: Task = resource
@@ -48,25 +49,18 @@ async def handle_bundle(request: Request):
 
     except Exception as e:
         logger.exception(e)
-        operation_outcome = create_operation_outcome("error", "exception", str(e))
-        return Response(content=operation_outcome.model_dump_json(), media_type="application/json", status_code=500)
+        return Response(content=create_operation_outcome("error", "exception", str(e)), media_type="application/json", status_code=500)
 
 @fhir_api_app.get("/fhir/Task/{task_id}")
 async def get_task_status(task_id: str):
     try:
         task = task_store.get_fhir_task_by_id(task_id)
         if not task:
-            operation_outcome = create_operation_outcome(
-                severity="error",
-                code="not-found",
-                diagnostics=f"Task with ID {task_id} not found"
-            )
-            return Response(content=operation_outcome.model_dump_json(), media_type="application/json", status_code=404)
+            return Response(content=create_operation_outcome("error", "not-found", f"Task with ID {task_id} not found"), media_type="application/json", status_code=404)
         return Response(content=task.model_dump_json(), media_type="application/json", status_code=200)
     except Exception as e:
         logger.exception(e)
-        operation_outcome = create_operation_outcome("error", "exception", str(e))
-        return Response(content=operation_outcome.model_dump_json(), media_type="application/json", status_code=500)
+        return Response(content=create_operation_outcome("error", "exception", str(e)), media_type="application/json", status_code=500)
 
 @fhir_api_app.get("/fhir/Task")
 async def list_all_tasks():
@@ -80,5 +74,4 @@ async def list_all_tasks():
         return Response(content=bundle.model_dump_json(), media_type="application/json", status_code=200)
     except Exception as e:
         logger.exception(e)
-        operation_outcome = create_operation_outcome("error", "exception", str(e))
-        return Response(content=operation_outcome.model_dump_json(), media_type="application/json", status_code=500)
+        return Response(content=create_operation_outcome("error", "exception", str(e)), media_type="application/json", status_code=500)
