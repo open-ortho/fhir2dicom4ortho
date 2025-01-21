@@ -41,6 +41,13 @@
 - [Contributing](#contributing)
   - [Development](#development)
   - [requirement.txt](#requirementtxt)
+- [Building the FHIR Bundle](#building-the-fhir-bundle)
+  - [Example FHIR Bundle](#example-fhir-bundle)
+    - [Task Resource](#task-resource)
+    - [ImagingStudy Resource](#imagingstudy-resource)
+    - [Binary (DICOM MWL) Resource](#binary-dicom-mwl-resource)
+    - [Binary (Image File) Resource](#binary-image-file-resource)
+  - [Constructing the Bundle](#constructing-the-bundle)
 - [License](#license)
 - [Contact](#contact)
 - [Acknowledgements](#acknowledgements)
@@ -117,6 +124,190 @@ Before development,
 The `requirements.txt` file is only used for Dependabot, which i think works off of that and not `poetry.lock`. However, the project's dependencies are managed by poetry.
 
 Building a new docker image should trigger the generation of a new `requirements.txt`, which you should then safely commit.
+
+## Building the FHIR Bundle
+
+To operate this API, you need to construct a FHIR Bundle containing specific resources. Below is an example of how to build the required FHIR Bundle, using `fhir2dicom4ortho.Bundle.json` as a reference.
+
+### Example FHIR Bundle
+
+The FHIR Bundle should contain the following resources:
+
+1. **Task**: Describes the task to be performed.
+2. **ImagingStudy**: Contains information about the imaging study.
+3. **Binary (DICOM MWL)**: Contains the DICOM Modality Worklist (MWL) data.
+4. **Binary (Image File)**: Contains the image file data.
+
+#### Task Resource
+
+The Task resource describes the task to be performed, including references to the Binary and ImagingStudy resources.
+
+```json
+{
+  "resourceType": "Task",
+  "id": "task-id",
+  "status": "requested",
+  "intent": "order",
+  "description": "Process DICOM MWL and Image Input",
+  "authoredOn": "2024-06-16T14:00:00Z",
+  "requester": {
+    "reference": "Practitioner/456",
+    "display": "Dr. John Doe"
+  },
+  "for": {
+    "reference": "Patient/123",
+    "display": "Patient Example"
+  },
+  "input": [
+    {
+      "type": {
+        "text": "DICOM MWL"
+      },
+      "valueReference": {
+        "reference": "Binary/dicom-mwl-id"
+      }
+    },
+    {
+      "type": {
+        "text": "Image File"
+      },
+      "valueReference": {
+        "reference": "Binary/image-file-id"
+      }
+    },
+    {
+      "type": {
+        "text": "Image Study"
+      },
+      "valueReference": {
+        "reference": "ImagingStudy/imaging-study-id"
+      }
+    }
+  ]
+}
+```
+
+#### ImagingStudy Resource
+
+The ImagingStudy resource contains information about the imaging study, including series and instances.
+
+```json
+{
+  "resourceType": "ImagingStudy",
+  "id": "imaging-study-id",
+  "status": "available",
+  "subject": {
+    "reference": "Patient/123",
+    "display": "Patient Example"
+  },
+  "started": "2024-06-16T14:00:00Z",
+  "numberOfSeries": 1,
+  "numberOfInstances": 1,
+  "series": [
+    {
+      "uid": "series-uid",
+      "number": 7,
+      "modality": {
+        "coding": [
+          {
+            "system": "http://dicom.nema.org/resources/ontology/DCM",
+            "code": "XC",
+            "display": "External-camera Photography"
+          }
+        ]
+      },
+      "started": "2024-06-16T14:00:00Z",
+      "description": "Sample XC Series",
+      "numberOfInstances": 1,
+      "instance": [
+        {
+          "uid": "instance-uid",
+          "sopClass": {
+            "system": "https://dicom.nema.org/medical/dicom/current/output/chtml/part04/sect_B.5.html#table_B.5-1",
+            "code": "1.2.840.10008.5.1.4.1.1.77.1.4.1",
+            "display": "VL Photographic Image Storage"
+          },
+          "number": 100,
+          "title": "Sample Orthodontic Image"
+        }
+      ]
+    }
+  ]
+}
+```
+
+#### Binary (DICOM MWL) Resource
+
+The Binary resource containing the DICOM Modality Worklist (MWL) data.
+
+```json
+{
+  "resourceType": "Binary",
+  "id": "dicom-mwl-id",
+  "contentType": "application/dicom",
+  "data": "base64-encoded-dicom-mwl-data"
+}
+```
+
+#### Binary (Image File) Resource
+
+The Binary resource containing the image file data.
+
+```json
+{
+  "resourceType": "Binary",
+  "id": "image-file-id",
+  "contentType": "image/png",
+  "data": "base64-encoded-image-data"
+}
+```
+
+### Constructing the Bundle
+
+Combine the above resources into a single FHIR Bundle.
+
+```json
+{
+  "resourceType": "Bundle",
+  "type": "batch",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:task-id",
+      "resource": { /* Task resource */ },
+      "request": {
+        "method": "POST",
+        "url": "http://fhir2dicom4ortho/fhir/Bundle"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:imaging-study-id",
+      "resource": { /* ImagingStudy resource */ },
+      "request": {
+        "method": "POST",
+        "url": "http://fhir2dicom4ortho/fhir/Bundle"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:dicom-mwl-id",
+      "resource": { /* Binary (DICOM MWL) resource */ },
+      "request": {
+        "method": "POST",
+        "url": "http://fhir2dicom4ortho/fhir/Bundle"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:image-file-id",
+      "resource": { /* Binary (Image File) resource */ },
+      "request": {
+        "method": "POST",
+        "url": "http://fhir2dicom4ortho/fhir/Bundle"
+      }
+    }
+  ]
+}
+```
+
+This FHIR Bundle can then be sent to the API to process the DICOM MWL and image input.
 
 <!-- LICENSE -->
 ## License
