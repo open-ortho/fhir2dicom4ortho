@@ -31,9 +31,13 @@ class ArgsCache:
     @staticmethod
     def load_arguments():
         # Create an object similar to argparse.Namespace
+        tasks_db_url=os.getenv('F2D4O_TASKS_DB_FILENAME', None),
+        if tasks_db_url is not None:
+            tasks_db_url = f"sqlite:///{tasks_db_url}"
+        verbosity=os.getenv('F2D4O_VERBOSITY', 0)
         return Namespace(
             # The path of the SQLite DB file for the local mapping.
-            verbosity=os.getenv('F2D4O_VERBOSITY', 0),
+            verbosity=int(verbosity),
 
             # FHIR API server IP and port.
             fhir_api=bool(strtobool(os.getenv('F2D4O_FHIR_API', 'True'))),
@@ -52,4 +56,6 @@ class ArgsCache:
             pacs_dimse_hostname=os.getenv('F2D4O_PACS_DIMSE_IP', ''),
             pacs_dimse_port=int(os.getenv('F2D4O_PACS_DIMSE_PORT', '104')),
 
+            # The path of the SQLite DB file for the local mapping. e.g.: 'sqlite:////app/tasks.db'
+            tasks_db_url=tasks_db_url
         )

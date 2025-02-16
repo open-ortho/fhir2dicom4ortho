@@ -1,9 +1,13 @@
+import uuid
 from sqlalchemy import create_engine, Column, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from fhir.resources.task import Task as FHIRTask
+from pathlib import Path
+import re
+
+from fhir2dicom4ortho import logger
 from fhir2dicom4ortho.tasks import TASK_DRAFT
-import uuid
 
 Base = declarative_base()
 
@@ -16,9 +20,24 @@ class Task(Base):
 
 
 class TaskStore:
-    def __init__(self, db_url='sqlite:///tasks.sqlite'):
+    def __init__(self, db_url=None):
+        if db_url is None:
+            logger.warning("No database URL provided, using in-memory database for tasks.")
+            db_url = 'sqlite:///:memory:'
+        elif db_url.startswith('sqlite:///'):
+            # Extract the file path from the URL
+            file_path = re.sub(r'^sqlite:///', '', db_url)
+            if file_path != ':memory:':
+                # Create parent directories if needed
+                db_path = Path(file_path)
+                db_path.parent.mkdir(parents=True, exist_ok=True)
+
+        logger.info(f"Using SQLite database at {db_url}")
         self.engine = create_engine(db_url)
-        Base.metadata.create_all(self.engine)
+        try:
+            Base.metadata.create_all(self.engine)
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize database at {db_url}: {str(e)}") from e
         self.Session = sessionmaker(bind=self.engine)
 
     def add_task(self, fhir_task: FHIRTask):
