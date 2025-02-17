@@ -10,3 +10,4 @@
 8. `invoke deploy`: this will run tests, build image and deploy it.
 9. If all goes well, then merge branch into master: `git flow release finish`. The GitHub Actions will take care of deploying to PyPi.
 10. `git push --tags`
+11. Once back in develop branch, `bumpversion patch` to bump up a patch and add `-dev` suffix.
