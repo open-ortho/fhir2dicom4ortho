@@ -41,7 +41,13 @@ def ensure_orthanc_running(c):
 @task(pre=[export_requirements, ensure_orthanc_running])
 def test(c):
     """Run all unit tests."""
-    c.run("set -a && source ./dot-env && set +a && python -m unittest")
+    # Set up environment variables for testing and run tests. Its crazy: these are set in the test code as well!
+    c.run("""
+        set -a
+        source test/env-dev
+        set +a
+        python -m unittest -v
+    """, pty=True)
 
 @task(pre=[test, build, push])
 def deploy(c):
