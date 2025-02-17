@@ -31,7 +31,7 @@ class ArgsCache:
     @staticmethod
     def load_arguments():
         # Create an object similar to argparse.Namespace
-        tasks_db_url=os.getenv('F2D4O_TASKS_DB_FILENAME', None),
+        tasks_db_url=os.getenv('F2D4O_TASKS_DB_FILENAME', None)
         if tasks_db_url is not None:
             tasks_db_url = f"sqlite:///{tasks_db_url}"
         verbosity=os.getenv('F2D4O_VERBOSITY', 0)

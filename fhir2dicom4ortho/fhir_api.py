@@ -14,11 +14,16 @@ _task_store = None
 
 def get_task_store():
     """FastAPI dependency that provides the TaskStore singleton instance"""
-    global _task_store
-    if _task_store is None:
-        args = ArgsCache.get_arguments()
-        _task_store = TaskStore(db_url=args.tasks_db_url)
-    return _task_store
+    try:
+        global _task_store
+        if _task_store is None:
+            args = ArgsCache.get_arguments()
+            _task_store = TaskStore(db_url=args.tasks_db_url)
+        return _task_store
+    except Exception as e:
+        # I'm not sure if this is the best way to handle this error: i can't return a Response object here becuase these are FastAPI dependencies. Should we just not even catch this error?
+        logger.error(f"Failed to initialize database: {str(e)}")
+        raise e
 
 def create_operation_outcome(severity: str, code: str, diagnostics: str) -> str:
     outcome = OperationOutcome(

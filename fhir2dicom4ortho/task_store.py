@@ -31,13 +31,12 @@ class TaskStore:
                 # Create parent directories if needed
                 db_path = Path(file_path)
                 db_path.parent.mkdir(parents=True, exist_ok=True)
+                logger.info(f"All parent directories exist for {db_path.absolute()}")
 
         logger.info(f"Using SQLite database at {db_url}")
         self.engine = create_engine(db_url)
-        try:
-            Base.metadata.create_all(self.engine)
-        except Exception as e:
-            raise RuntimeError(f"Failed to initialize database at {db_url}: {str(e)}") from e
+
+        Base.metadata.create_all(self.engine)
         self.Session = sessionmaker(bind=self.engine)
 
     def add_task(self, fhir_task: FHIRTask):
