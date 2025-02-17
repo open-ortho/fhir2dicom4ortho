@@ -35,13 +35,13 @@ def push(c):
 @task
 def ensure_orthanc_running(c):
     """Ensure the Orthanc service is running."""
-    c.run("docker compose up -d orthanc")
+    c.run("docker compose -f test/docker-compose.yml up -d")
     time.sleep(2)  # Wait for Orthanc to start
 
 @task(pre=[export_requirements, ensure_orthanc_running])
 def test(c):
     """Run all unit tests."""
-    c.run("python -m unittest")
+    c.run("set -a && source ./dot-env && set +a && python -m unittest")
 
 @task(pre=[test, build, push])
 def deploy(c):
