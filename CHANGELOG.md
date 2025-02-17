@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.1.1
+-----
+
+- Fix broken :memory: database
+- Fix error if DB file didn't exist
+
 0.1.0
 -----
 

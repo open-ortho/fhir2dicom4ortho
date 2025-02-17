@@ -26,15 +26,4 @@ verbosity_mapping = {
 }
 args_cache = ArgsCache().load_arguments()
 
-level = verbosity_mapping.get(args_cache.verbosity, logging.DEBUG)
-logging.basicConfig(level=level)
-root_logger = logging.getLogger()
-root_logger.setLevel(level)
-
-# Set the format for all handlers of the root logger
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(funcName)s: %(message)s', datefmt='%Y-%m-%dT%H:%M:%S')
-for handler in root_logger.handlers:
-    handler.setFormatter(formatter)
-
-root_logger.propagate = True
 logger = logging.getLogger(__name__)

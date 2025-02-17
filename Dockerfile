@@ -5,11 +5,10 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Copy the pyproject.toml and other necessary files to the container
-COPY pyproject.toml README.md /app/
+COPY pyproject.toml README.md requirements.txt /app/
 
 # Copy the rest of the application code to the container
 COPY fhir2dicom4ortho /app/fhir2dicom4ortho
-COPY pyproject.toml requirements.txt /app/
 
 RUN pip install -r /app/requirements.txt
 RUN pip install /app

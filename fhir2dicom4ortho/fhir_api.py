@@ -1,17 +1,36 @@
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, Depends
 from fhir.resources.bundle import Bundle, BundleEntry
 from fhir.resources.task import Task
 from fhir.resources.operationoutcome import OperationOutcome
+from contextlib import asynccontextmanager
 
 from fhir2dicom4ortho.scheduler import scheduler
 from fhir2dicom4ortho.tasks import build_and_send_dicom_image, TASK_RECEIVED
 from fhir2dicom4ortho.task_store import TaskStore
 from fhir2dicom4ortho import logger
+from fhir2dicom4ortho.args_cache import ArgsCache
 
-fhir_api_app = FastAPI()
+_task_store = None
 
-# In-memory task store
-task_store = TaskStore()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    args = ArgsCache.get_arguments()
+    global _task_store
+    _task_store = TaskStore(db_url=args.tasks_db_url)
+    yield
+    # Shutdown
+    if _task_store is not None:
+        _task_store.cleanup()
+
+fhir_api_app = FastAPI(lifespan=lifespan)
+
+def get_task_store() -> TaskStore:
+    """FastAPI dependency that provides the TaskStore singleton instance"""
+    global _task_store
+    if _task_store is None:
+        raise RuntimeError("TaskStore not initialized")
+    return _task_store
 
 def create_operation_outcome(severity: str, code: str, diagnostics: str) -> str:
     outcome = OperationOutcome(
@@ -24,7 +43,7 @@ def create_operation_outcome(severity: str, code: str, diagnostics: str) -> str:
     return outcome.model_dump_json()
 
 @fhir_api_app.post("/fhir/Bundle")
-async def handle_bundle(request: Request):
+async def handle_bundle(request: Request, task_store: TaskStore = Depends(get_task_store)):
     try:
         bundle_data = await request.json()
         bundle = Bundle(**bundle_data)
@@ -52,7 +71,7 @@ async def handle_bundle(request: Request):
         return Response(content=create_operation_outcome("error", "exception", str(e)), media_type="application/json", status_code=500)
 
 @fhir_api_app.get("/fhir/Task/{task_id}")
-async def get_task_status(task_id: str):
+async def get_task_status(task_id: str, task_store: TaskStore = Depends(get_task_store)):
     try:
         task = task_store.get_fhir_task_by_id(task_id)
         if not task:
@@ -63,7 +82,7 @@ async def get_task_status(task_id: str):
         return Response(content=create_operation_outcome("error", "exception", str(e)), media_type="application/json", status_code=500)
 
 @fhir_api_app.get("/fhir/Task")
-async def list_all_tasks():
+async def list_all_tasks(task_store: TaskStore = Depends(get_task_store)):
     try:
         tasks = task_store.get_all_tasks()
         bundle = Bundle(

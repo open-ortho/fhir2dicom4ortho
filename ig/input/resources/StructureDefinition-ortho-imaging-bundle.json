@@ -1,0 +1,105 @@
+{
+  "resourceType": "StructureDefinition",
+  "id": "ortho-imaging-bundle",
+  "url": "http://fhir2dicom4ortho/StructureDefinition/ortho-imaging-bundle",
+  "version": "0.1.0",
+  "name": "OrthoImagingBundle",
+  "title": "Orthodontic Imaging Bundle Profile",
+  "status": "draft",
+  "description": "Profile requiring specific resources for orthodontic imaging workflow",
+  "fhirVersion": "4.0.1",
+  "kind": "resource",
+  "abstract": false,
+  "type": "Bundle",
+  "baseDefinition": "http://hl7.org/fhir/StructureDefinition/Bundle",
+  "derivation": "constraint",
+  "differential": {
+    "element": [
+      {
+        "id": "Bundle",
+        "path": "Bundle"
+      },
+      {
+        "id": "Bundle.type",
+        "path": "Bundle.type",
+        "fixedCode": "batch"
+      },
+      {
+        "id": "Bundle.entry",
+        "path": "Bundle.entry",
+        "min": 3,
+        "max": "*"
+      },
+      {
+        "id": "Bundle.entry:task",
+        "path": "Bundle.entry",
+        "sliceName": "task",
+        "min": 1,
+        "max": "1"
+      },
+      {
+        "id": "Bundle.entry:task.resource",
+        "path": "Bundle.entry.resource",
+        "min": 1,
+        "type": [
+          {
+            "code": "Resource",
+            "profile": [
+              "http://hl7.org/fhir/StructureDefinition/Task"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "Bundle.entry:imagingStudy",
+        "path": "Bundle.entry",
+        "sliceName": "imagingStudy",
+        "min": 1,
+        "max": "1"
+      },
+      {
+        "id": "Bundle.entry:imagingStudy.resource",
+        "path": "Bundle.entry.resource",
+        "min": 1,
+        "type": [
+          {
+            "code": "Resource",
+            "profile": [
+              "http://hl7.org/fhir/StructureDefinition/ImagingStudy"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "Bundle.entry:binary",
+        "path": "Bundle.entry",
+        "sliceName": "binary",
+        "min": 1,
+        "max": "*"
+      },
+      {
+        "id": "Bundle.entry:binary.resource",
+        "path": "Bundle.entry.resource",
+        "min": 1,
+        "type": [
+          {
+            "code": "Resource",
+            "profile": [
+              "http://hl7.org/fhir/StructureDefinition/Binary"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "Bundle.entry.request",
+        "path": "Bundle.entry.request",
+        "min": 1
+      },
+      {
+        "id": "Bundle.entry.request.method",
+        "path": "Bundle.entry.request.method",
+        "fixedCode": "POST"
+      }
+    ]
+  }
+}
