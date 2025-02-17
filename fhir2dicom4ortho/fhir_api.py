@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException, Request, Response, Depends
 from fhir.resources.bundle import Bundle, BundleEntry
 from fhir.resources.task import Task
 from fhir.resources.operationoutcome import OperationOutcome
+from contextlib import asynccontextmanager
 
 from fhir2dicom4ortho.scheduler import scheduler
 from fhir2dicom4ortho.tasks import build_and_send_dicom_image, TASK_RECEIVED
@@ -9,21 +10,27 @@ from fhir2dicom4ortho.task_store import TaskStore
 from fhir2dicom4ortho import logger
 from fhir2dicom4ortho.args_cache import ArgsCache
 
-fhir_api_app = FastAPI()
 _task_store = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    args = ArgsCache.get_arguments()
+    global _task_store
+    _task_store = TaskStore(db_url=args.tasks_db_url)
+    yield
+    # Shutdown
+    if _task_store is not None:
+        _task_store.cleanup()
+
+fhir_api_app = FastAPI(lifespan=lifespan)
 
 def get_task_store():
     """FastAPI dependency that provides the TaskStore singleton instance"""
-    try:
-        global _task_store
-        if _task_store is None:
-            args = ArgsCache.get_arguments()
-            _task_store = TaskStore(db_url=args.tasks_db_url)
-        return _task_store
-    except Exception as e:
-        # I'm not sure if this is the best way to handle this error: i can't return a Response object here becuase these are FastAPI dependencies. Should we just not even catch this error?
-        logger.error(f"Failed to initialize database: {str(e)}")
-        raise e
+    global _task_store
+    if _task_store is None:
+        raise RuntimeError("TaskStore not initialized")
+    return _task_store
 
 def create_operation_outcome(severity: str, code: str, diagnostics: str) -> str:
     outcome = OperationOutcome(

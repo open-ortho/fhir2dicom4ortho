@@ -1,7 +1,8 @@
 import uuid
 from sqlalchemy import create_engine, Column, String, Text
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.pool import StaticPool
 from fhir.resources.task import Task as FHIRTask
 from pathlib import Path
 import re
@@ -20,43 +21,89 @@ class Task(Base):
 
 
 class TaskStore:
+    """ TaskStore is a singleton class that provides a database interface for storing and retrieving tasks.
+    
+    Key features:
+    - Uses SQLite database for storing tasks
+    - Singleton class that provides a single instance of the TaskStore, ensuring that only one connection to the database is used, for thread safety and ability to run :memory: database in production.
+
+    There is a lot of extra logic to ensure this stays a Singleton, as i was having issues with the :memeory: database.
+
+    """
+    _instance = None
+    _initialized = False
+    _engine = None
+    _session_factory = None
+
+    def __new__(cls, db_url=None):
+        if cls._instance is None:
+            cls._instance = super(TaskStore, cls).__new__(cls)
+        return cls._instance
+
     def __init__(self, db_url=None):
-        if db_url is None:
-            logger.warning("No database URL provided, using in-memory database for tasks.")
-            db_url = 'sqlite:///:memory:'
-        elif db_url.startswith('sqlite:///'):
-            # Extract the file path from the URL
-            file_path = re.sub(r'^sqlite:///', '', db_url)
-            if file_path != ':memory:':
-                # Create parent directories if needed
-                db_path = Path(file_path)
-                db_path.parent.mkdir(parents=True, exist_ok=True)
-                logger.info(f"All parent directories exist for {db_path.absolute()}")
+        if not TaskStore._initialized:
+            if db_url is None:
+                logger.warning("No database URL provided, using in-memory database for tasks.")
+                # Use shared cache for in-memory database
+                db_url = 'sqlite:///:memory:?cache=shared'
+            elif db_url.startswith('sqlite:///'):
+                file_path = re.sub(r'^sqlite:///', '', db_url)
+                if file_path != ':memory:':
+                    db_path = Path(file_path)
+                    db_path.parent.mkdir(parents=True, exist_ok=True)
+                    logger.info(f"All parent directories exist for {db_path.absolute()}")
 
-        logger.info(f"Using SQLite database at {db_url}")
-        self.engine = create_engine(db_url)
+            logger.info(f"Using SQLite database at {db_url}")
+            
+            # Create engine with specific settings for SQLite
+            TaskStore._engine = create_engine(
+                db_url,
+                connect_args={
+                    "check_same_thread": False,
+                    "uri": True  # Enable URI mode for connection string
+                },
+                pool_pre_ping=True,
+                pool_recycle=3600,
+                # Keep a single connection alive for in-memory database
+                poolclass=StaticPool if ':memory:' in db_url else None
+            )
+            
+            # Create all tables
+            Base.metadata.create_all(TaskStore._engine)
+            
+            # Create session factory
+            TaskStore._session_factory = scoped_session(sessionmaker(bind=TaskStore._engine))
+            TaskStore._initialized = True
 
-        Base.metadata.create_all(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
+        # Use the class-level session factory
+        self.Session = TaskStore._session_factory
+
+    def get_session(self):
+        """Get a new session, creating tables if necessary"""
+        if not TaskStore._initialized:
+            raise RuntimeError("TaskStore not properly initialized")
+        return self.Session()
 
     def add_task(self, fhir_task: FHIRTask):
         """ Add a new task to the store
 
         This method is used to add a new task to the store. The task is stored in the database with a unique ID, and the same ID is used to overwrite the FHIR Task ID.
         """
-        session = self.Session()
-        new_id = str(uuid.uuid4())
-        fhir_task.id = new_id
-        fhir_task.status = TASK_DRAFT
-        new_task = Task(
-            id=new_id,
-            description=fhir_task.description,
-            fhir_task=fhir_task.model_dump_json()
-        )
-        session.add(new_task)
-        session.commit()
-        session.close()
-        return fhir_task
+        session = self.get_session()
+        try:
+            new_id = str(uuid.uuid4())
+            fhir_task.id = new_id
+            fhir_task.status = TASK_DRAFT
+            new_task = Task(
+                id=new_id,
+                description=fhir_task.description,
+                fhir_task=fhir_task.model_dump_json()
+            )
+            session.add(new_task)
+            session.commit()
+            return fhir_task
+        finally:
+            session.close()
 
     def reserve_id(self, description=None, intent="unknown") -> str:
         """ Reserve a new task ID.
@@ -67,22 +114,26 @@ class TaskStore:
 
         Maybe this method is necessary in tests?
         """
-        session = self.Session()
-        fhir_task = FHIRTask.model_construct(
-            status=TASK_DRAFT, description=description, intent=intent)
-        new_task = Task(description=description,
-                        fhir_task=fhir_task.model_dump_json())
-        session.add(new_task)
-        session.commit()
-        reserved_id = new_task.id
-        session.close()
-        return reserved_id
+        session = self.get_session()
+        try:
+            fhir_task = FHIRTask.model_construct(
+                status=TASK_DRAFT, description=description, intent=intent)
+            new_task = Task(description=description,
+                            fhir_task=fhir_task.model_dump_json())
+            session.add(new_task)
+            session.commit()
+            reserved_id = new_task.id
+            return reserved_id
+        finally:
+            session.close()
 
     def get_task_by_id(self, task_id) -> FHIRTask:
-        session = self.Session()
-        task = session.query(Task).filter_by(id=task_id).first()
-        session.close()
-        return task
+        session = self.get_session()
+        try:
+            task = session.query(Task).filter_by(id=task_id).first()
+            return task
+        finally:
+            session.close()
 
     def get_fhir_task_by_id(self, task_id) -> FHIRTask:
         task = self.get_task_by_id(task_id)
@@ -94,34 +145,30 @@ class TaskStore:
     def modify_task_status(self, task_id, new_status) -> FHIRTask:
         """ Modify the status of a task by ID
         """
-        session = self.Session()
-        task = self.get_task_by_id(task_id)
-        if task:
-            fhir_task = FHIRTask.model_validate_json(task.fhir_task)
-            fhir_task.status = new_status
-            task.fhir_task = fhir_task.model_dump_json()
-            session.add(task)
-            session.commit()
-        session.close()
-        return fhir_task if task else None
+        session = self.get_session()
+        try:
+            task = self.get_task_by_id(task_id)
+            if task:
+                fhir_task = FHIRTask.model_validate_json(task.fhir_task)
+                fhir_task.status = new_status
+                task.fhir_task = fhir_task.model_dump_json()
+                session.add(task)
+                session.commit()
+            return fhir_task if task else None
+        finally:
+            session.close()
 
     def get_all_tasks(self):
         """ Retrieve all tasks from the database """
-        session = self.Session()
-        tasks = session.query(Task).all()
-        session.close()
-        fhir_tasks = [FHIRTask.model_validate_json(task.fhir_task) for task in tasks]
-        return fhir_tasks
+        session = self.get_session()
+        try:
+            tasks = session.query(Task).all()
+            fhir_tasks = [FHIRTask.model_validate_json(task.fhir_task) for task in tasks]
+            return fhir_tasks
+        finally:
+            session.close()
 
-    # def modify_task(self, task_id, updated_fhir_task: FHIRTask) -> FHIRTask:
-    #     session = self.Session()
-    #     task = session.query(Task).filter_by(id=task_id).first()
-    #     if task:
-    #         existing_fhir_task = FHIRTask.model_parse_raw(task.fhir_task)
-    #         # Preserve the id and status
-    #         updated_fhir_task.id = existing_fhir_task.id
-    #         updated_fhir_task.status = existing_fhir_task.status
-    #         task.fhir_task = updated_fhir_task.model_dump_json()
-    #         session.commit()
-    #     session.close()
-    #     return updated_fhir_task if task else None
+    def cleanup(self):
+        """Cleanup resources"""
+        if hasattr(self, 'Session'):
+            self.Session.remove()
