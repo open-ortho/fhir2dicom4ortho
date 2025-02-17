@@ -35,13 +35,19 @@ def push(c):
 @task
 def ensure_orthanc_running(c):
     """Ensure the Orthanc service is running."""
-    c.run("docker compose up -d orthanc")
+    c.run("docker compose -f test/docker-compose.yml up -d")
     time.sleep(2)  # Wait for Orthanc to start
 
 @task(pre=[export_requirements, ensure_orthanc_running])
 def test(c):
     """Run all unit tests."""
-    c.run("python -m unittest")
+    # Set up environment variables for testing and run tests. Its crazy: these are set in the test code as well!
+    c.run("""
+        set -a
+        source test/env-dev
+        set +a
+        python -m unittest -v
+    """, pty=True)
 
 @task(pre=[test, build, push])
 def deploy(c):

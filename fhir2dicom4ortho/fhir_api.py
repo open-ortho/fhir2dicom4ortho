@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
 
 fhir_api_app = FastAPI(lifespan=lifespan)
 
-def get_task_store():
+def get_task_store() -> TaskStore:
     """FastAPI dependency that provides the TaskStore singleton instance"""
     global _task_store
     if _task_store is None:
