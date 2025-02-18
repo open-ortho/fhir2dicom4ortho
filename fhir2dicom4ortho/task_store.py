@@ -127,7 +127,7 @@ class TaskStore:
         finally:
             session.close()
 
-    def get_task_by_id(self, task_id) -> FHIRTask:
+    def get_task_by_id(self, task_id) -> Task:
         session = self.get_session()
         try:
             task = session.query(Task).filter_by(id=task_id).first()
