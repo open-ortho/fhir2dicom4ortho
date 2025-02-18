@@ -137,7 +137,5 @@ def _get_status_from_response(response):
     if "status_code" in response:
         if response.status_code == 200:
             return TASK_COMPLETED
-    if response.status_code == 200:
-        return TASK_COMPLETED
     
     return TASK_FAILED
