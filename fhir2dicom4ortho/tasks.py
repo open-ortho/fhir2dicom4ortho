@@ -77,9 +77,10 @@ def _build_dicom_image(bundle:Bundle, task_id, task_store)-> OrthodonticPhotogra
     orthodontic_photograph.copy_mwl_tags(dicom_mwl=mwl_dataset)
     orthodontic_photograph.series_instance_uid = series0_uid
     orthodontic_photograph.series_number = series0_number
-    orthodontic_photograph.instance_number = instance0_number
+    orthodontic_photograph.instance_number = str(instance0_number)
     orthodontic_photograph.set_dicom_attributes_by_type_keyword()
     orthodontic_photograph.prepare()
+
     return orthodontic_photograph
 
 def _send_dicom_image(orthodontic_photograph:OrthodonticPhotograph):
