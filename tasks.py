@@ -24,7 +24,7 @@ def export_requirements(c):
 @task(pre=[export_requirements])
 def build(c):
     """Build the Docker image."""
-    c.run(f"docker build -t {docker_image_name}:latest -t {docker_image_name}:{version} .")
+    c.run(f"docker build --platform linux/amd64 -t {docker_image_name}:latest -t {docker_image_name}:{version} .")
 
 @task
 def push(c):
