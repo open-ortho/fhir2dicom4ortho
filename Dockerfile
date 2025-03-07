@@ -10,6 +10,7 @@ COPY pyproject.toml README.md requirements.txt /app/
 # Copy the rest of the application code to the container
 COPY fhir2dicom4ortho /app/fhir2dicom4ortho
 
+RUN pip install --upgrade pip
 RUN pip install -r /app/requirements.txt
 RUN pip install /app
 
