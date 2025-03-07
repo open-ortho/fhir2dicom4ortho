@@ -6,6 +6,8 @@ import toml
 from invoke import task
 import time
 
+DOCKER_BUILD_OPTS = "--platform linux/amd64"
+
 # Load the version from pyproject.toml
 with open("pyproject.toml", "r") as f:
     pyproject = toml.load(f)
@@ -24,7 +26,7 @@ def export_requirements(c):
 @task(pre=[export_requirements])
 def build(c):
     """Build the Docker image."""
-    c.run(f"docker build -t {docker_image_name}:latest -t {docker_image_name}:{version} .")
+    c.run(f"docker build {DOCKER_BUILD_OPTS} -t {docker_image_name}:latest -t {docker_image_name}:{version} .")
 
 @task
 def push(c):
