@@ -3,6 +3,7 @@ import test
 from fhir2dicom4ortho.task_store import TaskStore
 from fhir2dicom4ortho.tasks import _build_dicom_image, TASK_DRAFT, TASK_COMPLETED, TASK_FAILED, TASK_REJECTED, TASK_INPROGRESS
 from fhir.resources.bundle import Bundle
+from dicom4ortho.utils import get_scheduled_protocol_code
 import unittest
 
 class TestTasks(unittest.TestCase):
@@ -19,7 +20,7 @@ class TestTasks(unittest.TestCase):
 
         ds = orthodontic_photograph.to_dataset()
         print(ds)
-        code = orthodontic_photograph.get_scheduled_protocol_code()
+        code = get_scheduled_protocol_code(ds)
         self.assertIsNotNone(code)
         self.assertEqual(code.CodeValue, "EV20")
         ds.save_as(os.path.join(test.current_dir,"test_build_dicom_image.dcm"))
