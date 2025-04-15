@@ -59,9 +59,9 @@ def _build_dicom_image(bundle:Bundle, task_id, task_store)-> OrthodonticPhotogra
     if hasattr(series0, 'uid'):
         series0_uid = series0.uid
 
-    series0_started = None
-    if hasattr(series0, 'started'):
-        series0_started = series0.started
+    started = None
+    if hasattr(imagingstudy, 'started'):
+        started = imagingstudy.started
 
     instance0_uid = None
     if hasattr(instance0, 'uid'):
@@ -82,8 +82,9 @@ def _build_dicom_image(bundle:Bundle, task_id, task_store)-> OrthodonticPhotogra
     orthodontic_photograph.series_instance_uid = series0_uid
     orthodontic_photograph.series_number = series0_number
     orthodontic_photograph.instance_number = str(instance0_number)
-    orthodontic_photograph.study_datetime = series0_started
-    orthodontic_photograph.series_datetime = series0_started
+    if started:
+        orthodontic_photograph.study_datetime = started
+        orthodontic_photograph.series_datetime = started
     orthodontic_photograph.set_dicom_attributes_by_type_keyword()
     orthodontic_photograph.prepare()
 

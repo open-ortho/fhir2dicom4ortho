@@ -8,8 +8,8 @@ from logging import DEBUG
 from time import sleep
 from fhir.resources.bundle import Bundle
 from fastapi.testclient import TestClient
-from contextlib import contextmanager
 import os
+import copy
 
 from fhir2dicom4ortho.fhir_api import fhir_api_app, get_task_store
 from fhir2dicom4ortho.tasks import TASK_COMPLETED, TASK_FAILED, build_and_send_dicom_image
@@ -34,6 +34,7 @@ class TestFHIRAPI(unittest.TestCase):
         # Initialize test client
         cls.client = TestClient(fhir_api_app)
         cls.bundle = Bundle.model_validate(test.test_bundle)
+        cls.instances = test.test_instances
 
     @classmethod
     def tearDownClass(cls):
@@ -61,18 +62,27 @@ class TestFHIRAPI(unittest.TestCase):
 
         This test does not test the actual sending of the DICOM image to the PACS server, so the orthanc-mock server is not necessary. It will try to send, and either log success or failure. Both will pass the test.
         """
-        response = self.client.post("/fhir/Bundle", json=test.test_bundle)
-        self.assertEqual(response.status_code, 200)
-        response_data = response.json()
-        self.assertIn("status", response_data)
-        self.assertEqual(response_data["status"], "draft")
-        
-        print("********** Waiting for Task to Complete... **********")
-        sleep(1)
-        
-        response = self.client.get(f"/fhir/Task/{response_data['id']}")
-        response_data = response.json()
-        self.assertIn(response_data["status"], [TASK_COMPLETED, TASK_FAILED])
+
+        for instance in self.instances:
+            bundle = copy.deepcopy(test.test_bundle)
+            # Replace the 'instance' section of the DICOM series with the current test instance
+            bundle["entry"][1]["resource"]["series"][0]["instance"] = instance['instance']
+            bundle["entry"][1]["resource"]["series"][0]["started"] = instance['started']
+            response = self.client.post("/fhir/Bundle", json=bundle)
+            self.assertEqual(response.status_code, 200)
+            response_data = response.json()
+            self.assertIn("status", response_data)
+            self.assertEqual(response_data["status"], "draft")
+            
+            print("********** Waiting for Task to Complete... **********")
+            # NOTE: Keep this sleep value to ensure the 
+            # image is sent correctly before continuing
+            sleep(5)
+            
+            response = self.client.get(f"/fhir/Task/{response_data['id']}")
+            response_data = response.json()
+            self.assertIn(response_data["status"], [TASK_COMPLETED, TASK_FAILED])
+
 
     def test_process_bundle_task(self):
         """ Test requires mock PACS server
@@ -82,19 +92,25 @@ class TestFHIRAPI(unittest.TestCase):
 
 
         """
-        try:
-            task_id = self.task_store.reserve_id(description=self._testMethodName)
-            build_and_send_dicom_image(self.bundle, task_id, self.task_store)
+        for instance in self.instances:
+            try:
+                bundle = copy.deepcopy(self.bundle)
+                # Replace the 'instance' section of the DICOM series with the current test instance
+                bundle.entry[1].resource.series[0].instance = instance['instance']
+                bundle.entry[1].resource.series[0].started = instance['started']
+            
+                task_id = self.task_store.reserve_id(description=self._testMethodName)
+                build_and_send_dicom_image(bundle, task_id, self.task_store)
 
-            task = self.task_store.get_fhir_task_by_id(task_id)
-            self.assertIsNotNone(task)
-            if task.status != TASK_COMPLETED:
-                logger.error(f"Task failed with status {task.status}")
-                logger.error(f"Environment: DIMSE_AET={os.getenv('F2D4O_PACS_DIMSE_AET')}")
-            self.assertEqual(task.status, TASK_COMPLETED)
-        except Exception as e:
-            logger.exception("Failed to process bundle task")
-            raise
+                task = self.task_store.get_fhir_task_by_id(task_id)
+                self.assertIsNotNone(task)
+                if task.status != TASK_COMPLETED:
+                    logger.error(f"Task failed with status {task.status}")
+                    logger.error(f"Environment: DIMSE_AET={os.getenv('F2D4O_PACS_DIMSE_AET')}")
+                self.assertEqual(task.status, TASK_COMPLETED)
+            except Exception as e:
+                logger.exception("Failed to process bundle task")
+                raise
 
     def test_list_all_tasks(self):
         # Create a task to ensure there's at least one
