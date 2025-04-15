@@ -1,3 +1,4 @@
+""" Test the fhir2dicom4ortho module. """
 import os
 import unittest
 from pydantic import ValidationError
@@ -9,6 +10,7 @@ from fhir2dicom4ortho.tasks import _build_dicom_image
 from dicom4ortho.utils import get_scheduled_protocol_code
 
 class TestTasks(unittest.TestCase):
+    """ Test the fhir2dicom4ortho module. """
     def setUp(self):
         self.task_store = TaskStore(db_url='sqlite:///test_tasks.sqlite')
         self.bundle = Bundle.model_validate(test.test_bundle)

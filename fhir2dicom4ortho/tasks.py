@@ -1,12 +1,14 @@
+""" Module for processing tasks from FHIR resources to DICOM images and sending them to PACS. """
 from fhir.resources.bundle import Bundle
 from fhir.resources.binary import Binary
 from fhir.resources.imagingstudy import ImagingStudy
-from fhir2dicom4ortho import logger, args_cache
 
 from dicom4ortho.controller import OrthodonticController
 from dicom4ortho.m_orthodontic_photograph import OrthodonticPhotograph
 # from fhir2dicom4ortho.task_store import TaskStore # Cannot import TaskStore for circular import
+
 from fhir2dicom4ortho.utils import convert_binary_to_dataset, translate_all_scheduled_protocol_codes_to_opor
+from fhir2dicom4ortho import logger, args_cache
 
 TASK_DRAFT = "draft"
 TASK_RECEIVED = "received"
@@ -48,8 +50,8 @@ def _build_dicom_image(bundle:Bundle, task_id, task_store)-> OrthodonticPhotogra
     try:
         series0 = imagingstudy.series[0]
         instance0 = series0.instance[0]
-    except (IndexError, AttributeError):
-        raise ValueError("Invalid ImagingStudy: Must contain at least one Series and one Instance.")
+    except (IndexError, AttributeError) as e:
+        raise ValueError("Invalid ImagingStudy: Must contain at least one Series and one Instance.") from e
 
     series0_number = None
     if hasattr(series0, 'number'):
