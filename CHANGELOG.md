@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.1.2
+-----
+
+- Fix StudyDate, StudyTime, SeriesDate, SeriesTime not being set and defaulting to now.
+
 0.1.1
 -----
 

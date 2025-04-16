@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fhir2dicom4ortho"
-version = "0.1.2-dev"
+version = "0.1.2"
 description = "A FHIR API to dicom4ortho"
 readme = "README.md"
 requires-python = ">=3.10"
