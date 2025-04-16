@@ -15,9 +15,13 @@ os.environ['F2D4O_PACS_DIMSE_PORT'] = '4242'
 current_dir = os.path.dirname(__file__)
 
 # Construct the path to the JSON file
-json_file_path = os.path.join(current_dir, 'fhir2dicom4ortho.Bundle.json')
+json_file_path = os.path.join(current_dir, 'data/fhir2dicom4ortho.Bundle.json')
+json_instances_path = os.path.join(current_dir, 'data/instances_bundle.json')
 
 # Load the test_bundle from the JSON file
 with open(json_file_path, 'r') as f:
     test_bundle = json.load(f)
 
+# Load instance values representing 3 different images
+with open(json_instances_path, 'r') as f:
+    test_instances = json.load(f)
