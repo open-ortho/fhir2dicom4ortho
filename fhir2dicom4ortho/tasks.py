@@ -53,6 +53,14 @@ def _build_dicom_image(bundle:Bundle, task_id, task_store)-> OrthodonticPhotogra
     except (IndexError, AttributeError) as e:
         raise ValueError("Invalid ImagingStudy: Must contain at least one Series and one Instance.") from e
 
+    started = None
+    if hasattr(imagingstudy, 'started'):
+        started = imagingstudy.started
+
+    series0_started = None
+    if hasattr(series0, 'started'):
+        series0_started = series0.started
+
     series0_number = None
     if hasattr(series0, 'number'):
         series0_number = series0.number
@@ -60,10 +68,6 @@ def _build_dicom_image(bundle:Bundle, task_id, task_store)-> OrthodonticPhotogra
     series0_uid = None
     if hasattr(series0, 'uid'):
         series0_uid = series0.uid
-
-    started = None
-    if hasattr(imagingstudy, 'started'):
-        started = imagingstudy.started
 
     instance0_uid = None
     if hasattr(instance0, 'uid'):
@@ -86,7 +90,8 @@ def _build_dicom_image(bundle:Bundle, task_id, task_store)-> OrthodonticPhotogra
     orthodontic_photograph.instance_number = str(instance0_number)
     if started:
         orthodontic_photograph.study_datetime = started
-        orthodontic_photograph.series_datetime = started
+    if series0_started:
+        orthodontic_photograph.series_datetime = series0_started
     orthodontic_photograph.set_dicom_attributes_by_type_keyword()
     orthodontic_photograph.prepare()
 

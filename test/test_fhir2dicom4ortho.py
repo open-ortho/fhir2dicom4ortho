@@ -37,6 +37,8 @@ class TestTasks(unittest.TestCase):
         self.assertEqual(ds.SOPInstanceUID, "1.3.6.1.4.1.61741.11.2.4.146.2.192.6.158.81")
         self.assertEqual(ds.StudyDate, "20241115")
         self.assertEqual(ds.StudyTime, "115817.000000")
+        self.assertEqual(ds.SeriesDate, "20241116")
+        self.assertEqual(ds.SeriesTime, "115849.000000")
 
         ds.save_as(os.path.join(test.current_dir,"data/test_build_dicom_image.dcm"))
 
