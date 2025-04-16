@@ -75,7 +75,7 @@
           "reference": "Patient/123",
           "display": "Patient Example"
         },
-        "started": "2024-06-16T14:00:00Z",
+        "started": "2024-11-15T11:58:17Z",
         "numberOfSeries": 1,
         "numberOfInstances": 1,
         "series": [
@@ -91,7 +91,7 @@
                 }
               ]
             },
-            "started": "2024-06-16T14:00:00Z",
+            "started": "2024-11-16T11:58:49Z",
             "description": "Sample XC Series",
             "numberOfInstances": 1,
             "instance": [

@@ -1,12 +1,14 @@
+""" Module for processing tasks from FHIR resources to DICOM images and sending them to PACS. """
 from fhir.resources.bundle import Bundle
 from fhir.resources.binary import Binary
 from fhir.resources.imagingstudy import ImagingStudy
-from fhir2dicom4ortho import logger, args_cache
 
 from dicom4ortho.controller import OrthodonticController
 from dicom4ortho.m_orthodontic_photograph import OrthodonticPhotograph
 # from fhir2dicom4ortho.task_store import TaskStore # Cannot import TaskStore for circular import
+
 from fhir2dicom4ortho.utils import convert_binary_to_dataset, translate_all_scheduled_protocol_codes_to_opor
+from fhir2dicom4ortho import logger, args_cache
 
 TASK_DRAFT = "draft"
 TASK_RECEIVED = "received"
@@ -48,8 +50,16 @@ def _build_dicom_image(bundle:Bundle, task_id, task_store)-> OrthodonticPhotogra
     try:
         series0 = imagingstudy.series[0]
         instance0 = series0.instance[0]
-    except (IndexError, AttributeError):
-        raise ValueError("Invalid ImagingStudy: Must contain at least one Series and one Instance.")
+    except (IndexError, AttributeError) as e:
+        raise ValueError("Invalid ImagingStudy: Must contain at least one Series and one Instance.") from e
+
+    started = None
+    if hasattr(imagingstudy, 'started'):
+        started = imagingstudy.started
+
+    series0_started = None
+    if hasattr(series0, 'started'):
+        series0_started = series0.started
 
     series0_number = None
     if hasattr(series0, 'number'):
@@ -77,9 +87,14 @@ def _build_dicom_image(bundle:Bundle, task_id, task_store)-> OrthodonticPhotogra
     orthodontic_photograph.copy_mwl_tags(dicom_mwl=mwl_dataset)
     orthodontic_photograph.series_instance_uid = series0_uid
     orthodontic_photograph.series_number = series0_number
-    orthodontic_photograph.instance_number = instance0_number
+    orthodontic_photograph.instance_number = str(instance0_number)
+    if started:
+        orthodontic_photograph.study_datetime = started
+    if series0_started:
+        orthodontic_photograph.series_datetime = series0_started
     orthodontic_photograph.set_dicom_attributes_by_type_keyword()
     orthodontic_photograph.prepare()
+
     return orthodontic_photograph
 
 def _send_dicom_image(orthodontic_photograph:OrthodonticPhotograph):
@@ -137,7 +152,5 @@ def _get_status_from_response(response):
     if "status_code" in response:
         if response.status_code == 200:
             return TASK_COMPLETED
-    if response.status_code == 200:
-        return TASK_COMPLETED
     
     return TASK_FAILED
