@@ -12,7 +12,7 @@
     <img src="https://raw.githubusercontent.com/open-ortho/fhir2dicom4ortho/master/images/open-ortho.png" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">fhir2dicom4ortho 0.1.2-dev</h3>
+  <h3 align="center">fhir2dicom4ortho 0.1.2</h3>
 
   <p align="center">
     A FHIR API Frontend to dicom4ortho.
